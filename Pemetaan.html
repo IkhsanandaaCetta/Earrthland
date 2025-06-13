@@ -3,117 +3,364 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
-        <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>EarthLand-Pemetaan</title>
         <link rel="stylesheet" href="./resources/ol.css">
         <link rel="stylesheet" href="resources/fontawesome-all.min.css">
         <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
         <link rel="stylesheet" href="./resources/qgis2web.css">
-<style>
-.search-layer {
-  top: 100px;
-  left: .5em;
-}
-.ol-touch .search-layer {
-  top: 130px;
-}
-</style>
+        <!-- jQuery -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <style>
-        html, body {
-            background-color: #ffffff;
-        }
-        .ol-control button {
-            background-color: #f8f8f8 !important;
-            color: #000000 !important;
-            border-radius: 0px !important;
-        }
-        .ol-zoom, .geolocate, .gcd-gl-control .ol-control {
-            background-color: rgba(255,255,255,.4) !important;
-            padding: 3px !important;
-        }
-        .ol-scale-line {
-            background: none !important;
-        }
-        .ol-scale-line-inner {
-            border: 2px solid #f8f8f8 !important;
-            border-top: none !important;
-            background: rgba(255, 255, 255, 0.5) !important;
-            color: black !important;
-        }
+            :root {
+                --primary-dark: #0F1B07;
+                --primary-white: #ffffff;
+                --primary-green: #5C821A;
+                --primary-light: #C6D166;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: var(--primary-white);
+                color: var(--primary-dark);
+            }
+            .header {
+                background: linear-gradient(135deg, var(--primary-dark), var(--primary-green));
+                color: var(--primary-white);
+                padding: 15px 20px;
+                box-shadow: 0 2px 10px rgba(15, 27, 7, 0.3);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 24px;
+                font-weight: 600;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                flex: 1;
+                min-width: 300px;
+            }
+            .search-container {
+                background: rgba(255, 255, 255, 0.95);
+                padding: 10px;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                border: 1px solid var(--primary-light);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 280px;
+                flex-shrink: 0;
+            }
+            .search-title {
+                display: none;
+            }
+            .search-input {
+                padding: 6px 10px;
+                border: 1px solid var(--primary-light);
+                border-radius: 6px;
+                font-size: 13px;
+                transition: all 0.3s ease;
+                width: 150px;
+                color: var(--primary-dark);
+            }
+            .search-input:focus {
+                outline: none;
+                border-color: var(--primary-green);
+                box-shadow: 0 0 10px rgba(92, 130, 26, 0.3);
+            }
+            .search-button {
+                background: linear-gradient(135deg, var(--primary-green), var(--primary-light));
+                color: var(--primary-white);
+                border: none;
+                padding: 6px 12px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 12px;
+                transition: all 0.3s ease;
+            }
+            .clear-button {
+                background: var(--primary-white);
+                color: var(--primary-green);
+                border: 1px solid var(--primary-green);
+                padding: 6px 12px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 12px;
+                transition: all 0.3s ease;
+            }
+            .clear-button:hover {
+                background: var(--primary-green);
+                color: var(--primary-white);
+            }
+            .search-results {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                max-height: 200px;
+                overflow-y: auto;
+                margin-top: 5px;
+                background: var(--primary-white);
+                border: 1px solid var(--primary-light);
+                border-radius: 6px;
+                box-shadow: 0 4px 15px rgba(15, 27, 7, 0.2);
+                z-index: 1001;
+                display: none;
+            }
+            .search-result-item {
+                padding: 8px;
+                cursor: pointer;
+                border-radius: 5px;
+                margin-bottom: 5px;
+                background: rgba(198, 209, 102, 0.1);
+                transition: all 0.3s ease;
+            }
+            .search-result-item:hover {
+                background: var(--primary-light);
+                color: var(--primary-dark);
+            }
+            #legend {
+                background: var(--primary-white);
+                padding: 15px;
+                position: absolute;
+                bottom: 20px;
+                left: 20px;
+                z-index: 1000;
+                border-radius: 10px;
+                border: 2px solid var(--primary-light);
+                box-shadow: 0 4px 15px rgba(15, 27, 7, 0.2);
+            }
+            .legend-title {
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: var(--primary-dark);
+            }
+            .ol-control {
+                background: var(--primary-white) !important;
+                border: 2px solid var(--primary-light) !important;
+                border-radius: 8px !important;
+                padding: 10px !important;
+            }
+            .ol-control > * {
+                background-color: var(--primary-white) !important;
+                color: var(--primary-dark) !important;
+                border-radius: 6px !important;
+            }
+            .ol-control > :focus, .ol-control >:hover {
+                background-color: var(--primary-light) !important;
+            }
+            .ol-attribution a, .gcd-gl-input::placeholder, .search-layer-input-search::placeholder {
+                color: var(--primary-dark) !important;
+            }
+            .search-layer-input-search {
+                background-color: var(--primary-white) !important;
+                border: 1px solid var(--primary-light) !important;
+                border-radius: 6px !important;
+            }
+            .ol-popup {
+                background: var(--primary-white);
+                border: 2px solid var(--primary-light);
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(15, 27, 7, 0.2);
+            }
+            .ol-popup table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            .ol-popup th {
+                background: var(--primary-green);
+                color: var(--primary-white);
+                padding: 6px;
+            }
+            .ol-popup td {
+                padding: 4px 6px;
+                border-bottom: 1px solid var(--primary-light);
+            }
+            #map {
+                width: 100%;
+                height: calc(100vh - 70px);
+                border-top: 3px solid var(--primary-green);
+            }
+            .loading {
+                display: none;
+                color: var(--primary-green);
+                font-style: italic;
+                font-size: 11px;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                margin-top: 5px;
+                background: var(--primary-white);
+                padding: 5px 8px;
+                border: 1px solid var(--primary-light);
+                border-radius: 4px;
+                z-index: 1001;
+            }
+            .header-search-wrapper {
+                position: relative;
+            }
         </style>
-<style>
-.tooltip {
-  position: relative;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
-  color: white;
-  padding: 4px 8px;
-  opacity: 0.7;
-  white-space: nowrap;
-}
-.tooltip-measure {
-  opacity: 1;
-  font-weight: bold;
-}
-.tooltip-static {
-  background-color: #ffcc33;
-  color: black;
-  border: 1px solid white;
-}
-.tooltip-measure:before,
-.tooltip-static:before {
-  border-top: 6px solid rgba(0, 0, 0, 0.5);
-  border-right: 6px solid transparent;
-  border-left: 6px solid transparent;
-  content: "";
-  position: absolute;
-  bottom: -6px;
-  margin-left: -7px;
-  left: 50%;
-}
-.tooltip-static:before {
-  border-top-color: #ffcc33;
-}
-.measure-control {
-  top: 65px;
-  left: .5em;
-  display: flex;
-}
-.ol-touch .measure-control {
-  top: 80px;
-}
-.measure-control label {
-  padding: 1px;
-  padding-right: 4px;
-}
-</style>
-        <style>
-        html, body, #map {
-            width: 100%;
-            height: 100%;
-            padding: 0;
-            margin: 0;
-        }
-        </style>
-        <title></title>
     </head>
     <body>
+        <div class="header">
+            <h1>🌍 Peta Bidang Tanah Desa Canden, Kecamatan Sambi</h1>
+            <div class="header-search-wrapper">
+                <div class="search-container">
+                    <div class="search-title">🔍 Pencarian Bidang Tanah</div>
+                    <input type="text" id="search-input" class="search-input" placeholder="Cari NIB, nama, alamat...">
+                    <button onclick="searchLand()" class="search-button">Cari</button>
+                    <button onclick="clearSearch()" class="clear-button">Reset</button>
+                </div>
+                <div class="loading" id="loading">Mencari data...</div>
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </div>
         <div id="map">
             <div id="popup" class="ol-popup">
                 <a href="#" id="popup-closer" class="ol-popup-closer"></a>
                 <div id="popup-content"></div>
             </div>
         </div>
+        <div id="legend">
+            <div class="legend-title">📊 Legenda</div>
+            <img src="http://localhost:8080/geoserver/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&LAYER=bidang_tanah" alt="Legenda">
+        </div>
         <script src="resources/qgis2web_expressions.js"></script>
-        <script src="resources/polyfills.js"></script>
         <script src="./resources/functions.js"></script>
         <script src="./resources/ol.js"></script>
         <script src="./resources/ol-layerswitcher.js"></script>
-        <script src="layers/Admin_Canden_0.js"></script><script src="layers/Bidang_Tanah_1.js"></script><script src="layers/Sungai_2.js"></script><script src="layers/Jalan_3.js"></script>
-        <script src="styles/Admin_Canden_0_style.js"></script><script src="styles/Bidang_Tanah_1_style.js"></script><script src="styles/Sungai_2_style.js"></script><script src="styles/Jalan_3_style.js"></script>
-        <script src="./layers/layers.js" type="text/javascript"></script> 
+        <script src="layers/Admin_Canden_1.js"></script>
+        <script src="layers/Bidang_Tanah_2.js"></script>
+        <script src="layers/Sungai_3.js"></script>
+        <script src="layers/Jalan_4.js"></script>
+        <script src="styles/Admin_Canden_1_style.js"></script>
+        <script src="styles/Bidang_Tanah_2_style.js"></script>
+        <script src="styles/Sungai_3_style.js"></script>
+        <script src="styles/Jalan_4_style.js"></script>
+        <script src="./layers/layers.js" type="text/javascript"></script>
         <script src="./resources/Autolinker.min.js"></script>
         <script src="./resources/qgis2web.js"></script>
-    </body>
+        <script>
+            var searchMarkers = [];
+            var map = new ol.Map({
+                target: 'map',
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([110.704000, -7.511387]),
+                    zoom: 14
+                })
+            });
+            function searchLand() {
+                var searchTerm = document.getElementById('search-input').value.trim();
+                if (!searchTerm) {
+                    alert('Masukkan kata kunci pencarian');
+                    return;
+                }
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('search-results').innerHTML = '';
+                setTimeout(function() {
+                    document.getElementById('loading').style.display = 'none';
+                    var mockResults = [
+                        {id: 1, nib: '4722577241061', owner: 'Gilang Setiawan', address: 'Jl. Perguruan No. 5 Desa Canden', lon: 110.704000, lat: -7.511387},
+                        {id: 2, nib: '4752585078650', owner: 'Hasan Hidayar', address: 'Jl. Perguruan II No. 11 Desa Canden', lon: 110.705000, lat: -7.512000},
+                        {id: 3, nib: '8161241822566', owner: 'Indah Kartika', address: 'Jl. Perguruan III No. 3 Desa Canden', lon: 110.703500, lat: -7.510500}
+                    ];
+                    var filteredResults = mockResults.filter(function(item) {
+                        return item.nib.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                               item.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                               item.address.toLowerCase().includes(searchTerm.toLowerCase());
+                    });
+                    displaySearchResults(filteredResults);
+                }, 1000);
+            }
+            function displaySearchResults(results) {
+                var resultsDiv = document.getElementById('search-results');
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div style="color: #5C821A; font-style: italic; padding: 8px;">Tidak ada data yang ditemukan</div>';
+                    resultsDiv.style.display = 'block';
+                    return;
+                }
+                var html = '<div style="margin-bottom: 8px; font-weight: 600; color: #0F1B07; padding: 8px; border-bottom: 1px solid #C6D166;">Hasil Pencarian (' + results.length + ' data):</div>';
+                results.forEach(function(item) {
+                    html += '<div class="search-result-item" onclick="focusOnLocation(' + item.lat + ', ' + item.lon + ', \'' + item.nib + '\', \'' + item.owner + '\', \'' + item.address + '\')" style="padding: 8px; margin: 4px; cursor: pointer; border-radius: 4px; background: rgba(198, 209, 102, 0.1); font-size: 12px;">' +
+                           '<strong>NIB: ' + item.nib + '</strong><br>' +
+                           'Pemilik: ' + item.owner + '<br>' +
+                           'Alamat: ' + item.address +
+                           '</div>';
+                });
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+            }
+            function focusOnLocation(lat, lon, nib, owner, address) {
+                searchMarkers.forEach(function(marker) {
+                    map.getLayers().remove(marker);
+                });
+                searchMarkers = [];
+                var marker = new ol.layer.Vector({
+                    source: new ol.source.Vector({
+                        features: [new ol.Feature({
+                            geometry: new ol.geom.Point(ol.proj.fromLonLat([lon, lat]))
+                        })]
+                    }),
+                    style: new ol.style.Style({
+                        image: new ol.style.Icon({
+                            radius: 25,
+                            src: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png'
+                        })
+                    })
+                });
+                map.addLayer(marker);
+                searchMarkers.push(marker);
+                var popupContent = '<div style="min-width: 200px;">' +
+                            '<h3 style="margin: 0 0 10px 0; color: #0F1;">📍 Detail Bidang Tanah</h3>' +
+                            '<table style="width: 100%; border-collapse: collapse;">' +
+                            '<tr><th style="padding: 4px;">NIB:</th><td style="padding: 4px;">' + nib + '</td></tr>' +
+                            '<tr><th><th>Owner:</td><td style="padding: 4px;">' + owner + '</td></tr>' +
+                            '<tr><td style="padding: 4px;">Alamat:</td><td style="padding: 4px;">' + address + '</td></tr>' +
+                            '</table>' +
+                            '</div>';
+                var popup = document.getElementById('popup-content');
+                var popupElement = document.getElementById('popup');
+                var popup = new ol.Overlay({
+                    element: popupElement,
+                    positioning: 'bottom-center',
+                    stopEvent: true
+                });
+                map.addOverlay(popup);
+                popup.setPosition(ol.proj.fromLonLat([lon, lat]));
+                document.getElementById('popup-content').innerHTML = popupContent;
+                map.getView().animate({
+                    center: ol.proj.fromLonLat([lon, lat]),
+                    zoom: 16,
+                    duration: 500
+                });
+            }
+            function clearSearch() {
+                document.getElementById('search-input').value = '';
+                document.getElementById('search-results').innerHTML = '';
+                document.getElementById('search-results').style.display = 'none';
+                document.getElementById('loading').style.display = 'none';
+                searchMarkers.forEach(function(marker) {
+                    map.removeLayer(marker);
+                });
+                searchMarkers = [];
+                map.getView().animate({
+                    center: ol.proj.fromLonLat([110.704000, -7.511387]),
+                    zoom: 14,
+                    duration: 500
+                });
+            }
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchLand();
+                }
+            });
+        </script>
+    </body>
 </html>
